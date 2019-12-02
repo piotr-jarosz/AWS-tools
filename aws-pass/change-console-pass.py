@@ -2,7 +2,7 @@ import boto3
 import argparse
 import os
 
-
+# ARGS 
 parser = argparse.ArgumentParser(
   description='Change expired AWS console password.',
   epilog="It's based on your tokens in AWS CLI config path"
@@ -23,17 +23,17 @@ parser.add_argument(
 parser.add_argument(
   '--profile', '-p', 
   help='AWS profile name', 
-  default=None
+  default=False
   )
 parser.add_argument(
   '--access-key-id', 
   help='AWS AccessKey ID', 
-  default=None
+  default=False
   )
 parser.add_argument(
   '--access-key', 
   help='AWS AccessKey', 
-  default=None)
+  default=False)
 
 parser.add_argument('--debug', action='store_true', 
   help=argparse.SUPPRESS, default=False
@@ -41,11 +41,10 @@ parser.add_argument('--debug', action='store_true',
 
 args = parser.parse_args()
 
+# PARSING ARGS
 def log(message):
     if args.debug:
         print(message)
-
-log(args)
 
 
 if args.old_password == None:
@@ -55,9 +54,20 @@ if args.old_password == '':
   print('You need to provide your old passord.')
   os._exit(1)
 
+if not args.profile or ( not args.access_key_id and not args.access_key ):
+  if 'AWS_ACCESS_KEY_ID' in os.environ and 'AWS_ACCESS_KEY_ID' in os.environ:
+    args.access_key_id = os.environ['AWS_ACCESS_KEY_ID']
+    args.access_key = os.environ['AWS_SECRET_ACCESS_KEY']
+  elif boto3.Session().available_profiles:
+    args.profile = 'default'
+  else:
+    print("""
+      No API credentials found :( 
+      Please configure AWS CLI or provide AWS access key directly,
+      you could also set propper environment variables.""")
+    os._exit(1)
 
-
-os.environ['HOME']
+log(args)
 
 
 def aws_client(profile):
