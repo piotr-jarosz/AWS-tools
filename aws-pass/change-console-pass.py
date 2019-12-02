@@ -4,8 +4,11 @@ import os
 
 # ARGS 
 parser = argparse.ArgumentParser(
-  description='Change expired AWS console password.',
-  epilog="It's based on your tokens in AWS CLI config path"
+  description="""Script to change expired AWS console password.
+  It's based on your acces key. You could provide it via:
+  -profile name (aws cli config)
+  -directly putting your access key with propper switches
+  -environmen variables (same as for AWS CLI)"""
   )
 
 parser.add_argument(
@@ -58,22 +61,23 @@ if not args.profile or ( not args.access_key_id and not args.access_key ):
   if 'AWS_ACCESS_KEY_ID' in os.environ and 'AWS_ACCESS_KEY_ID' in os.environ:
     args.access_key_id = os.environ['AWS_ACCESS_KEY_ID']
     args.access_key = os.environ['AWS_SECRET_ACCESS_KEY']
-  elif boto3.Session().available_profiles:
+  elif 'default' in boto3.Session().available_profiles:
     args.profile = 'default'
   else:
     print("""
       No API credentials found :( 
       Please configure AWS CLI or provide AWS access key directly,
-      you could also set propper environment variables.""")
+      you could also set propper environment variables.
+      """)
+    parser.print_help()
     os._exit(1)
 
 log(args)
 
+if args.profile:
+  session = boto3.Session(profile_name=args.profile)
+elif args.access_key_id and args.access_key:
+  session = boto3.Session(aws_access_key_id=args.access_key_id, aws_secret_access_key=args.access_key)
 
-def aws_client(profile):
-  if profile == 'default':
-    session = boto3.Session()
-  else:
-    session = boto3.Session(profile_name=profile)
-  client = session.client('iam', region_name = 'eu-central-1')
-  return client
+client = session.client('iam')
+
