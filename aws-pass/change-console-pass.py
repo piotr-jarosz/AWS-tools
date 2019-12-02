@@ -1,6 +1,6 @@
 import boto3
 import argparse
-import os
+import os, string, random
 
 # ARGS 
 parser = argparse.ArgumentParser(
@@ -76,6 +76,10 @@ if not args.profile or ( not args.access_key_id and not args.access_key ):
       """)
     parser.print_help()
     os._exit(1)
+
+if args.new_password == 'generate':
+  args.new_password = ''.join([random.choice(string.ascii_letters + string.digits + string.punctuation ) for n in range(16)])
+  print('Your freshly generated new password:\t ' + args.new_password)
 
 log(args)
 
